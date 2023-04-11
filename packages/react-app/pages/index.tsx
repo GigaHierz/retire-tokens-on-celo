@@ -1,8 +1,10 @@
 import { usePrepareContractWrite, useContractWrite } from 'wagmi'
 import { useState } from 'react'
+import { parseEther } from 'ethers/lib/utils'
 
 import natureCarbonTonne from '../abis/NatureCarbonTonne.json'
 import toucanCarbonOffset from '../abis/ToucanCarbonOffset.json'
+import offsetHelper from '../abis/OffsetHelper.json'
 
 export default function Home () {
   const [amountPoolToken, setAmountPoolToken] = useState(0)
@@ -11,21 +13,32 @@ export default function Home () {
     address: natureCarbonTonne.address,
     abi: natureCarbonTonne.abi,
     functionName: 'redeemAuto2',
-    args: [1]
+    args: [parseEther('1.0')]
   })
 
   const tco2Config = usePrepareContractWrite({
     address: toucanCarbonOffset.address,
     abi: toucanCarbonOffset.abi,
     functionName: 'retire',
-    args: [1],
+    args: [parseEther('1')],
+    overrides: {
+      gasLimit: 2500000
+    }
+  })
+
+  const offsetConfig = usePrepareContractWrite({
+    address: offsetHelper.address,
+    abi: offsetHelper.abi,
+    functionName: 'autoOffsetPoolToken',
+    args: [natureCarbonTonne.address, parseEther('1')],
     overrides: {
       gasLimit: 2500000
     }
   })
 
   const nctContract = useContractWrite(nctConfig.config)
-  const offsetContract = useContractWrite(tco2Config.config)
+  const tco2retireContract = useContractWrite(tco2Config.config)
+  const offsetContract = useContractWrite(offsetConfig.config)
 
   return (
     <div>
@@ -73,11 +86,28 @@ export default function Home () {
               <button
                 type='submit'
                 className='group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                disabled={!tco2retireContract.write}
+                onClick={() => tco2retireContract.write?.()}
+              >
+                <span className='absolute inset-y-0 left-0 flex items-center pl-3'></span>
+                {'Retire ' + amountPoolToken + ' Tokens'}
+              </button>
+              {tco2retireContract.isLoading && <div>Check Wallet</div>}
+              {tco2retireContract.isSuccess && (
+                <div>
+                  Transaction: {JSON.stringify(tco2retireContract.data)}
+                </div>
+              )}
+            </div>
+            <div>
+              <button
+                type='submit'
+                className='group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
                 disabled={!offsetContract.write}
                 onClick={() => offsetContract.write?.()}
               >
                 <span className='absolute inset-y-0 left-0 flex items-center pl-3'></span>
-                {'Retire ' + amountPoolToken + ' Tokens'}
+                {'Redeem + Retire ' + amountPoolToken + ' Tokens'}
               </button>
               {offsetContract.isLoading && <div>Check Wallet</div>}
               {offsetContract.isSuccess && (
