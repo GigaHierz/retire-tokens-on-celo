@@ -43,16 +43,17 @@ export default function Sdk() {
     const nct = toucan.getPoolContract("NCT");
 
     // // call the redeem function
-    const tco2Tokens = nct
-      .redeemAuto2(parseEther("1"))
-      .then(async (data: any) => {
-        await getUserRedeems().then((data) => {
-          const tco2 = toucan.getTCO2Contract(data);
-          tco2.retire(parseEther("1"));
-        });
-      });
+    const redeemed = await nct.redeemAuto2(parseEther("1"));
 
-    console.log(tco2Tokens);
+    console.log(redeemed);
+
+    const tco2token = await getUserRedeems();
+    console.log(tco2token);
+
+    const tco2 = toucan.getTCO2Contract(tco2token);
+    tco2.retire(parseEther("1"));
+
+    console.log(tco2token);
   };
 
   return (

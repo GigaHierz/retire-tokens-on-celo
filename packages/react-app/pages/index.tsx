@@ -82,12 +82,10 @@ export default function Home() {
       })
       .toPromise();
 
-    console.log(result);
-
     if (result.error) throw result.error;
     if (result.data?.user?.redeemsCreated)
       setTco2address(result.data?.user?.redeemsCreated[0].token.address);
-    return result.data.user.redeemsCreated;
+    return result.data.user?.redeemsCreated;
     return [];
   };
 
@@ -95,19 +93,14 @@ export default function Home() {
   const tco2retireContract = useContractWrite(tco2Config.config);
 
   const retirePoolToken = async () => {
-    console.log(nctContract);
-    await nctContract.writeAsync?.().then(async (data) => {
-      console.log(data);
+    await nctContract.writeAsync?.();
 
-      console.log(address);
+    fetchUserRedeems(address?.toLowerCase(), "NCT", Number(amountPoolToken));
 
-      fetchUserRedeems();
-
-      tco2address &&
-        (await tco2retireContract.writeAsync?.().then(async (data) => {
-          console.log(data);
-        }));
-    });
+    tco2address &&
+      (await tco2retireContract.writeAsync?.().then(async (data) => {
+        console.log(data);
+      }));
   };
 
   return (
@@ -138,7 +131,7 @@ export default function Home() {
             <button
               className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               disabled={!nctContract.write && !amountPoolToken}
-              onClick={() => retirePoolToken()}
+              onClick={() => nctContract.write?.()}
             >
               <span className="absolute inset-y-0 left-0 flex items-center pl-3"></span>
               {"Redeem " + amountPoolToken + " Tokens"}
